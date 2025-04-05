@@ -1,19 +1,41 @@
 <main class="container">
-  <h1>Welcome to Tauri + Angular!</h1>
-
-  <div class="row">
-    <a href="https://tauri.app" target="_blank">
-      <img src="/assets/tauri.svg" class="logo tauri" alt="Tauri logo" />
-    </a>
-    <a href="https://angular.io" target="_blank">
-      <img src="/assets/angular.svg" class="logo angular" alt="Angular logo" />
-    </a>
+  <img src="/assets/background.png" aria-hidden class="background" />
+  <div class="title-wrapper">
+    <h1 class="title">Trupi-stresser</h1>
   </div>
-  <p>Click on the logos to learn more about the frameworks</p>
-
-  <form class="row" (submit)="greet($event, greetInput.value)">
-    <input #greetInput id="greet-input" placeholder="Enter a name..." />
-    <button type="submit">Greet</button>
+  <form [formGroup]="form" (ngSubmit)="DOS()">
+    <div class="textarea-wrapper">
+      <textarea
+        formControlName="ipv4Address"
+        placeholder="JAKIE KURWA IP?"
+        cols="15"
+        rows="3"
+      ></textarea>
+      <textarea
+        formControlName="port"
+        placeholder="WKLEJAJ PORT BRATKU"
+        cols="20"
+        rows="3"
+        [required]="false"
+      ></textarea>
+    </div>
+    <div class="range-wrapper">
+      <div class="range-inner-wrapper">
+        <div class="range-label left">1 mb</div>
+        <div class="range-input" (input)="updateTitle()">
+          <input
+            type="range"
+            min="1"
+            max="2000"
+            value="1000"
+            formControlName="dataSize"
+          />
+        </div>
+        <div class="range-label right">2000 mb</div>
+      </div>
+    </div>
+    <div class="dos-button-container">
+      <button class="dos-button">WPIERDOL BOMBE</button>
+    </div>
   </form>
-  <p>{{ greetingMessage }}</p>
 </main>

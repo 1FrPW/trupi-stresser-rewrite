@@ -1,0 +1,8 @@
+{
+    "identifier": "window",
+    "description": "basic window capabilities needed for the app, feel free to modify it to your needs",
+    "windows": ["*"],
+    "permissions": [
+        "core:window:allow-set-title"
+    ]
+}
