@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { invoke } from "@tauri-apps/api/core";
@@ -12,7 +12,8 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
+  backgroundAudio = new Audio('../assets/RiveR - Solo.mp3');
   form = new FormGroup({
     ipv4Address: new FormControl('', [
       Validators.required,
@@ -30,6 +31,13 @@ export class AppComponent {
     ]),
   });
   buttonLabel = "WPIERDOL BOMBE";
+
+  ngOnInit(): void {
+    this.backgroundAudio.loop = true;
+    this.backgroundAudio.volume = 0.4;
+
+    this.backgroundAudio.play();
+  }
 
   updateTitle() {
     getCurrentWindow().setTitle('Mocne pierdolniecie ' + this.form.get('dataSize')!.value! + ' mbs');
@@ -51,7 +59,7 @@ export class AppComponent {
           port: controls.port.value?.length === 0 ? null : controls.port.value,
           dataSize: controls.dataSize.value,
         }));
-        
+
         this.buttonLabel = "ZATRZYMAJ WYJEBE";
 
         return;
