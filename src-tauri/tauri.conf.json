@@ -15,8 +15,10 @@
         "title": "trupi-stresser",
         "resizable": false,
         "fullscreen": false,
-        "width": 852,
-        "height": 600
+        "minWidth": 852,
+        "maxWidth": 852,
+        "minHeight": 600,
+        "maxHeight": 600
       }
     ],
     "security": {
