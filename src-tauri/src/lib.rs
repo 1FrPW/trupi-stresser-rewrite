@@ -1,17 +1,20 @@
 use std::{
-    array,
     net::UdpSocket,
     sync::Mutex,
     thread::{self},
     time::{Duration, Instant},
 };
 
+use payload::Payload;
 use rand::Rng;
+use serde::Deserialize;
+use serde_json::Value;
 use states::AppState;
 use tauri::State;
 
-mod states;
 mod console;
+mod payload;
+mod states;
 
 // make getters and setters async because mutex's lock() blocks threads
 #[tauri::command]
@@ -35,25 +38,57 @@ async fn send_packets(
     data_size: usize,
 ) -> Result<(), ()> {
     console::spawn_console();
+
     let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
-    // 1 kb packet
-    let mut packet: [u8; 1024] = array::from_fn(|_| u8::MAX as u8);
-    let mut rng = rand::rng();
+
+    socket
+        .set_read_timeout(Some(Duration::from_secs(1)))
+        .unwrap();
+
+    let payloads = serde_json::from_str::<Value>(
+        String::from_utf8_lossy(include_bytes!("../payloads.json"))
+            .to_string()
+            .as_str(),
+    )
+    .expect("incorrect payloads.json file format")
+    .as_array()
+    .expect("payloads must be provided in an array")
+    .iter()
+    .map(|value| {
+        Payload::deserialize(value.clone()).expect("payload must have packet and port fields")
+    })
+    .collect::<Vec<Payload>>();
 
     let port: String = match port {
         Some(value) => value,
         None => {
             let mut free_port: Option<String> = None;
+            let mut _buffer: [u8; 4096] = [0; 4096];
 
-            for port_number in 1..9999 {
-                println!("scanning for free ports - attempt [{}]:", &port_number);
-                if let Ok(_bytes_written) = socket.send_to(
-                    &packet,
-                    target_address.clone() + ":" + port_number.to_string().as_str(),
-                ) {
-                    println!("free port: {}", &port_number);
-                    free_port = Some(port_number.to_string());
-                    break;
+            for (attempt, payload) in payloads.iter().enumerate() {
+                {
+                    let state = state.lock().unwrap();
+
+                    if !state.send_packets {
+                        println!("stopping...");
+                        break;
+                    }
+                }
+                println!("scanning for free ports - attempt [{}]", attempt);
+                println!("{payload:?}\n");
+
+                let address = target_address.clone() + ":" + payload.port.to_string().as_str();
+
+                if let Ok(_bytes_written) = socket.send_to(&payload.packet, &address) {
+                    // after sending the packet, wait for response
+                    if let Ok((_bytes_written, socket_address)) = socket.recv_from(&mut _buffer) {
+                        if socket_address.to_string() == address {
+                            println!("found free port on: {}", payload.port);
+
+                            free_port = Some(payload.port.to_string());
+                            break;
+                        }
+                    }
                 }
             }
             if let None = free_port {
@@ -66,6 +101,9 @@ async fn send_packets(
     };
 
     let target_address = target_address + ":" + port.as_str();
+    // 1 kb packet
+    let mut packet: [u8; 1024] = [0; 1024];
+    let mut rng = rand::rng();
     // convert to mb to kb
     let iterations = data_size * 1024;
     let mut iteration_start;
